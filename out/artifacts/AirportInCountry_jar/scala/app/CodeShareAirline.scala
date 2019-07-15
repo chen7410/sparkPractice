@@ -2,15 +2,14 @@ package app
 
 import org.apache.spark.{SparkConf, SparkContext}
 
-object NonstopAirline {
+object CodeShareAirline {
     private val ROUTES = "D:\\scalaworkspace\\AirlineDataset\\airlinedata\\routes.dat"
     private val AIRLINES = "D:\\scalaworkspace\\AirlineDataset\\airlinedata\\Final_airlines"
     private val ROUTE_AIRLINEID = 1
     private val AIRLINE_AIRLINEID = 0
     private val AIRLINE_AIRLINE_NAME = 1
-    private val ROUTE_STOP = 7
-    private val N_STOPS = "0"
-
+    private val ROUTE_CODE_SHARE = 6
+    private val CODE_SHARE = "Y"
 
     def main(args: Array[String]): Unit = {
         val conf = new SparkConf()
@@ -23,27 +22,20 @@ object NonstopAirline {
 
         val routePairs = route.map(line => {
             val info = line.split(",")
-            (info(ROUTE_AIRLINEID), info(ROUTE_STOP))
+            (info(ROUTE_AIRLINEID), info(ROUTE_CODE_SHARE))
         })
         val airlinePairs = airline.map(line => {
             val info = line.split(",")
             (info(AIRLINE_AIRLINEID), info(AIRLINE_AIRLINE_NAME))
         })
 
-        /*find the airline that has n stop*/
-        val routeNonstop = routePairs.filter(pair => pair._2 == N_STOPS)
-//        routeNonstop.foreach(println)
+        val routeCodeShare = routePairs.filter(pair => pair._2 == CODE_SHARE)
+        val airlineJoinRoute = airlinePairs
+                .join(routeCodeShare)
+                .distinct()
+                .sortBy(pair => pair._1.toInt)
+                .map(pair => pair._2._1)
 
-        val routeJoinAirline = routeNonstop.join(airlinePairs)
-//        joinRouteFromAirline.foreach(println)
-
-        /*eliminate the duplicated pairs and sort the pairs by their airline id*/
-        val distinct = routeJoinAirline.distinct().sortBy(pair => pair._1.toInt)
-
-        /*only show the airline names*/
-        val result = distinct.map(pair => {
-            (pair._2._2)
-        })
-        result.foreach(println)
+        airlineJoinRoute.foreach(println)
     }
 }
